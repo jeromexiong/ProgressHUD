@@ -62,6 +62,7 @@ public enum AlertIcon {
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 extension AlertIcon {
 
+    @available(iOS 13.0, *)
 	var image: UIImage? {
 		switch self {
 			case .heart:		return UIImage(systemName: "heart.fill")
@@ -136,6 +137,46 @@ public extension ProgressHUD {
 	}
 }
 
+public extension NSObject {
+    func noticeOnlyText(_ text: String) {
+        ProgressHUD.noticeOnlyText(text)
+    }
+    func noticeSuccess(_ text: String? = nil, autoClear: Bool = false, autoClearTime: Double = 3) {
+        ProgressHUD.noticeSuccess(text, autoClear: autoClear, autoClearTime: autoClearTime)
+    }
+    func noticeError(_ text: String? = nil, autoClear: Bool = false, autoClearTime: Double = 3) {
+        ProgressHUD.noticeError(text, autoClear: autoClear, autoClearTime: autoClearTime)
+    }
+    func pleaseWait(_ animationType: AnimationType = .systemActivityIndicator) {
+        ProgressHUD.animationType = animationType
+        ProgressHUD.show()
+    }
+    func showProgress(_ progress: Double, text: String? = nil) {
+        ProgressHUD.showProgress(text, CGFloat(progress))
+    }
+    func clearAllNotice() {
+        ProgressHUD.dismiss()
+    }
+}
+
+public extension ProgressHUD {
+    class func noticeOnlyText(_ text: String) {
+        DispatchQueue.main.async {
+            shared.setup(status: text, onlyStatus: true, hide: true, interaction: true)
+        }
+    }
+    class func noticeSuccess(_ text: String? = nil, autoClear: Bool = false, autoClearTime: Double = 3) {
+        DispatchQueue.main.async {
+            shared.setup(status: text, animatedIcon: .succeed, delay: autoClearTime, hide: autoClear, interaction: true)
+        }
+    }
+    class func noticeError(_ text: String? = nil, autoClear: Bool = false, autoClearTime: Double = 3) {
+        DispatchQueue.main.async {
+            shared.setup(status: text, animatedIcon: .failed, delay: autoClearTime, hide: autoClear, interaction: true)
+        }
+    }
+}
+
 //-------------------------------------------------------------------------------------------------------------------------------------------------
 public extension ProgressHUD {
 
@@ -157,6 +198,7 @@ public extension ProgressHUD {
 
 	// MARK: -
 	//---------------------------------------------------------------------------------------------------------------------------------------------
+    @available(iOS 13.0, *)
 	class func show(_ status: String? = nil, icon: AlertIcon, interaction: Bool = true) {
 
 		let image = icon.image?.withTintColor(shared.colorAnimation, renderingMode: .alwaysOriginal)
@@ -241,7 +283,7 @@ public class ProgressHUD: UIView {
 	private var toolbarHUD: UIToolbar?
 	private var labelStatus: UILabel?
 
-	private var viewProgress: ProgressView?
+	private var viewProgress: HUDProgressView?
 	private var viewAnimation: UIView?
 	private var viewAnimatedIcon: UIView?
 	private var staticImageView: UIImageView?
@@ -252,13 +294,31 @@ public class ProgressHUD: UIView {
 
 	private var colorBackground	= UIColor(red: 0, green: 0, blue: 0, alpha: 0.2)
 	private var colorHUD		= UIColor.systemGray
-	private var colorStatus		= UIColor.label
+    private lazy var colorStatus: UIColor = {
+         if #available(iOS 13.0, *) {
+            return UIColor.label
+        } else {
+            return UIColor.black
+        }
+    }()
 	private var colorAnimation	= UIColor.lightGray
 	private var colorProgress	= UIColor.lightGray
 
 	private var fontStatus		= UIFont.boldSystemFont(ofSize: 24)
-	private var imageSuccess	= UIImage.checkmark.withTintColor(UIColor.systemGreen, renderingMode: .alwaysOriginal)
-	private var imageError		= UIImage.remove.withTintColor(UIColor.systemRed, renderingMode: .alwaysOriginal)
+    private lazy var imageSuccess: UIImage = {
+         if #available(iOS 13.0, *) {
+            return UIImage.checkmark.withTintColor(UIColor.systemGreen, renderingMode: .alwaysOriginal)
+        } else {
+            return UIImage()
+        }
+    }()
+    private lazy var imageError: UIImage = {
+         if #available(iOS 13.0, *) {
+            return UIImage.remove.withTintColor(UIColor.systemRed, renderingMode: .alwaysOriginal)
+        } else {
+            return UIImage()
+        }
+    }()
 
 	private let keyboardWillShow	= UIResponder.keyboardWillShowNotification
 	private let keyboardWillHide	= UIResponder.keyboardWillHideNotification
@@ -294,31 +354,31 @@ public class ProgressHUD: UIView {
 
 	// MARK: -
 	//---------------------------------------------------------------------------------------------------------------------------------------------
-	private func setup(status: String? = nil, progress: CGFloat? = nil, animatedIcon: AnimatedIcon? = nil, staticImage: UIImage? = nil, hide: Bool, interaction: Bool) {
+    private func setup(status: String? = nil, onlyStatus: Bool = false, progress: CGFloat? = nil, animatedIcon: AnimatedIcon? = nil, staticImage: UIImage? = nil, delay: Double? = nil, hide: Bool, interaction: Bool) {
 
-		setupNotifications()
-		setupBackground(interaction)
-		setupToolbar()
-		setupLabel(status)
+        setupNotifications()
+        setupBackground(interaction)
+        setupToolbar()
+        setupLabel(status)
 
-		if (progress == nil) && (animatedIcon == nil) && (staticImage == nil) { setupAnimation()				}
-		if (progress != nil) && (animatedIcon == nil) && (staticImage == nil) { setupProgress(progress)			}
-		if (progress == nil) && (animatedIcon != nil) && (staticImage == nil) { setupAnimatedIcon(animatedIcon)	}
-		if (progress == nil) && (animatedIcon == nil) && (staticImage != nil) { setupStaticImage(staticImage)	}
+        if (progress == nil) && (animatedIcon == nil) && (staticImage == nil) { setupAnimation()                }
+        if (progress != nil) && (animatedIcon == nil) && (staticImage == nil) { setupProgress(progress)            }
+        if (progress == nil) && (animatedIcon != nil) && (staticImage == nil) { setupAnimatedIcon(animatedIcon)    }
+        if (progress == nil) && (animatedIcon == nil) && (staticImage != nil) { setupStaticImage(staticImage)    }
 
-		setupSize()
-		setupPosition()
+        setupSize(onlyStatus)
+        setupPosition()
 
-		hudShow()
+        hudShow()
 
-		if (hide) {
-			let text = labelStatus?.text ?? ""
-			let delay = Double(text.count) * 0.03 + 1.25
-			timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
-				self.hudHide()
-			}
-		}
-	}
+        if (hide) {
+            let text = labelStatus?.text ?? ""
+            let delay = delay != nil ? delay! : Double(text.count) * 0.03 + 1.25
+            timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+                self.hudHide()
+            }
+        }
+    }
 
 	//---------------------------------------------------------------------------------------------------------------------------------------------
 	private func setupNotifications() {
@@ -357,7 +417,8 @@ public class ProgressHUD: UIView {
 			viewBackground?.addSubview(toolbarHUD!)
 		}
 
-		toolbarHUD?.backgroundColor = colorHUD
+//		toolbarHUD?.backgroundColor = colorHUD
+        toolbarHUD?.barTintColor = colorHUD
 	}
 
 	//---------------------------------------------------------------------------------------------------------------------------------------------
@@ -385,7 +446,7 @@ public class ProgressHUD: UIView {
 		staticImageView?.removeFromSuperview()
 
 		if (viewProgress == nil) {
-			viewProgress = ProgressView(colorProgress)
+			viewProgress = HUDProgressView(colorProgress)
 			viewProgress?.frame = CGRect(x: 0, y: 0, width: 70, height: 70)
 		}
 
@@ -477,7 +538,7 @@ public class ProgressHUD: UIView {
 
 	// MARK: -
 	//---------------------------------------------------------------------------------------------------------------------------------------------
-	private func setupSize() {
+	private func setupSize(_ onlyText: Bool = false) {
 
 		var width: CGFloat = 120
 		var height: CGFloat = 120
@@ -488,12 +549,12 @@ public class ProgressHUD: UIView {
 			var rectLabel = text.boundingRect(with: sizeMax, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
 
 			width = ceil(rectLabel.size.width) + 60
-			height = ceil(rectLabel.size.height) + 120
+			height = ceil(rectLabel.size.height) + (onlyText ? 30 : 120)
 
 			if (width < 120) { width = 120 }
 
 			rectLabel.origin.x = (width - rectLabel.size.width) / 2
-			rectLabel.origin.y = (height - rectLabel.size.height) / 2 + 45
+			rectLabel.origin.y = (height - rectLabel.size.height) / 2 + (onlyText ? 0 : 45)
 
 			labelStatus?.frame = rectLabel
 		}
@@ -509,6 +570,13 @@ public class ProgressHUD: UIView {
 		viewAnimation?.center = CGPoint(x: centerX, y: centerY)
 		viewAnimatedIcon?.center = CGPoint(x: centerX, y: centerY)
 		staticImageView?.center = CGPoint(x: centerX, y: centerY)
+        
+        if onlyText {
+            viewProgress?.removeFromSuperview()
+            viewAnimation?.removeFromSuperview()
+            viewAnimatedIcon?.removeFromSuperview()
+            staticImageView?.removeFromSuperview()
+        }
 	}
 
 	//---------------------------------------------------------------------------------------------------------------------------------------------
@@ -620,7 +688,12 @@ public class ProgressHUD: UIView {
 	//---------------------------------------------------------------------------------------------------------------------------------------------
 	private func animationSystemActivityIndicator(_ view: UIView) {
 
-		let spinner = UIActivityIndicatorView(style: .large)
+        let spinner = UIActivityIndicatorView()
+        if #available(iOS 13.0, *) {
+            spinner.style = .large
+        } else {
+            spinner.style = .whiteLarge
+        }
 		spinner.frame = view.bounds
 		spinner.color = colorAnimation
 		spinner.hidesWhenStopped = true
@@ -1178,11 +1251,11 @@ public class ProgressHUD: UIView {
 	}
 }
 
-// MARK: - ProgressView
+// MARK: - HUDProgressView
 //-------------------------------------------------------------------------------------------------------------------------------------------------
-private class ProgressView: UIView {
+private class HUDProgressView: UIView {
 
-	var color: UIColor = .systemBackground {
+	var color: UIColor = .groupTableViewBackground {
 		didSet { setupLayers() }
 	}
 	private var progress: CGFloat = 0

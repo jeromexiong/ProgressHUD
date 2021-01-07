@@ -100,8 +100,11 @@ class ViewController: UITableViewController {
 		actions6.append("Cart")
 		actions6.append("Search")
 
-		ProgressHUD.colorAnimation = .systemBlue
-		ProgressHUD.colorProgress = .systemBlue
+        ProgressHUD.colorAnimation = .white
+        ProgressHUD.colorProgress = .white
+        ProgressHUD.fontStatus = UIFont.systemFont(ofSize: 18)
+        ProgressHUD.colorStatus = .white
+        ProgressHUD.colorHUD = UIColor(red:0, green:0, blue:0, alpha: 0.8)
 	}
 
 	// MARK: - Progress methods
@@ -218,7 +221,7 @@ extension ViewController {
 
 		if (indexPath.section == 1) {
 			if (indexPath.row == 0) { ProgressHUD.show();			status = nil				}
-			if (indexPath.row == 1) { ProgressHUD.show(textShort);	status = textShort			}
+			if (indexPath.row == 1) { noticeOnlyText(textShort);	status = textShort			}
 			if (indexPath.row == 2) { ProgressHUD.show(textLong);	status = textLong			}
 		}
 
@@ -266,26 +269,28 @@ extension ViewController {
 			if (indexPath.row == 5) { ProgressHUD.showAdded(textAdded)							}
 		}
 
-		if (indexPath.section == 7) {
-			if (indexPath.row == 0) { ProgressHUD.show(icon: .heart)							}
-			if (indexPath.row == 1) { ProgressHUD.show(icon: .doc)								}
-			if (indexPath.row == 2) { ProgressHUD.show(icon: .bookmark)							}
-			if (indexPath.row == 3) { ProgressHUD.show(icon: .moon)								}
-			if (indexPath.row == 4) { ProgressHUD.show(icon: .star)								}
-			if (indexPath.row == 5) { ProgressHUD.show(icon: .exclamation)						}
-			if (indexPath.row == 6) { ProgressHUD.show(icon: .flag)								}
-			if (indexPath.row == 7) { ProgressHUD.show(icon: .message)							}
-			if (indexPath.row == 8) { ProgressHUD.show(icon: .question)							}
-			if (indexPath.row == 9) { ProgressHUD.show(icon: .bolt)								}
-			if (indexPath.row == 10) { ProgressHUD.show(icon: .shuffle)							}
-			if (indexPath.row == 11) { ProgressHUD.show(icon: .eject)							}
-			if (indexPath.row == 12) { ProgressHUD.show(icon: .card)							}
-			if (indexPath.row == 13) { ProgressHUD.show(icon: .rotate)							}
-			if (indexPath.row == 14) { ProgressHUD.show(icon: .like)							}
-			if (indexPath.row == 15) { ProgressHUD.show(icon: .dislike)							}
-			if (indexPath.row == 16) { ProgressHUD.show(icon: .privacy)							}
-			if (indexPath.row == 17) { ProgressHUD.show(icon: .cart)							}
-			if (indexPath.row == 18) { ProgressHUD.show(icon: .search)							}
-		}
+        if #available(iOS 13.0, *) {
+            if (indexPath.section == 7) {
+                if (indexPath.row == 0) { ProgressHUD.show(icon: .heart)                            }
+                if (indexPath.row == 1) { ProgressHUD.show(icon: .doc)                                }
+                if (indexPath.row == 2) { ProgressHUD.show(icon: .bookmark)                            }
+                if (indexPath.row == 3) { ProgressHUD.show(icon: .moon)                                }
+                if (indexPath.row == 4) { ProgressHUD.show(icon: .star)                                }
+                if (indexPath.row == 5) { ProgressHUD.show(icon: .exclamation)                        }
+                if (indexPath.row == 6) { ProgressHUD.show(icon: .flag)                                }
+                if (indexPath.row == 7) { ProgressHUD.show(icon: .message)                            }
+                if (indexPath.row == 8) { ProgressHUD.show(icon: .question)                            }
+                if (indexPath.row == 9) { ProgressHUD.show(icon: .bolt)                                }
+                if (indexPath.row == 10) { ProgressHUD.show(icon: .shuffle)                            }
+                if (indexPath.row == 11) { ProgressHUD.show(icon: .eject)                            }
+                if (indexPath.row == 12) { ProgressHUD.show(icon: .card)                            }
+                if (indexPath.row == 13) { ProgressHUD.show(icon: .rotate)                            }
+                if (indexPath.row == 14) { ProgressHUD.show(icon: .like)                            }
+                if (indexPath.row == 15) { ProgressHUD.show(icon: .dislike)                            }
+                if (indexPath.row == 16) { ProgressHUD.show(icon: .privacy)                            }
+                if (indexPath.row == 17) { ProgressHUD.show(icon: .cart)                            }
+                if (indexPath.row == 18) { ProgressHUD.show(icon: .search)                            }
+            }
+        }
 	}
 }
